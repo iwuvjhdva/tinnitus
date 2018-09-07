@@ -21,8 +21,7 @@ func (tinnitus *Tinnitus) Run() error {
 	}
 
 	height := *Flags.From
-	transactionCount := 0
-	transactionIDs := make(map[string]bool)
+	var prevBlock *GetBitcoinBlockVerboseResult
 
 	for running := true; running; running = !ShouldExitGracefully() {
 		var err error
@@ -38,28 +37,39 @@ func (tinnitus *Tinnitus) Run() error {
 			return err
 		}
 
-		transactionCount += len(block.Tx)
-
-		for _, tx := range block.Tx {
-			transactionIDs[tx.Txid] = true
-			completeCount := 0
-
-			for _, vin := range tx.Vin {
-
-				if transactionIDs[vin.Txid] {
-					delete(transactionIDs, vin.Txid)
-					completeCount++
-				}
-			}
-
-		}
+		Logger.Debug("Playing block ", height, " time ", time.Unix(block.Time, 0))
 
 		if err = tinnitus.playBlock(block); err != nil {
 			return err
 		}
 
-		time.Sleep(Config.SleepDuration)
+		if prevBlock != nil {
+			sleepDuration := time.Unix(block.Time, 0).Sub(time.Unix(prevBlock.Time, 0))
+			Logger.Debug("Sleeping ", sleepDuration)
+			time.Sleep(sleepDuration)
+		}
+
+		prevBlock = block
 		height++
+	}
+
+	return nil
+}
+
+func (tinnitus *Tinnitus) Sandbox() error {
+	defer RPC.Shutdown()
+
+	if err := tinnitus.createSynthDefs(); err != nil {
+		return err
+	}
+
+	controls := make(map[string]float32)
+	// controls := map[string]float32{
+	// 	"freq": float32(20) * 100,
+	// 	"gain": float32(0.5),
+	// }
+	if err := tinnitus.synth("Coinbase", controls); err != nil {
+		return err
 	}
 
 	return nil

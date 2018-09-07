@@ -1,5 +1,6 @@
 # Binaries for programs and plugins
 cmd/tinnitus
+cmd/sandbox
 *.exe
 *.exe~
 *.dll
