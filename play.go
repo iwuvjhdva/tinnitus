@@ -2,6 +2,7 @@ package tinnitus
 
 import (
 	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/scgolang/sc"
 	"time"
 )
@@ -9,6 +10,24 @@ import (
 func (tinnitus *Tinnitus) playBlock(block *GetBitcoinBlockVerboseResult) error {
 	Logger.Debugf("Transactions number %d, difficulty %f", len(block.Tx), block.Difficulty)
 	for _, tx := range block.Tx {
+
+		var err error
+		var txHash *chainhash.Hash
+		var transaction *btcjson.TxRawResult
+
+		if txHash, err = chainhash.NewHashFromStr(tx.Txid); err != nil {
+			return err
+		}
+		if transaction, err = RPC.GetRawTransactionVerbose(txHash); err != nil {
+			return err
+		}
+
+		blockTime := time.Unix(block.Time, 0)
+		txTime := time.Unix(transaction.Time, 0)
+
+		if block.Time != transaction.Time {
+			Logger.Errorf("Block time %s, transaction time %s.", blockTime, txTime)
+		}
 
 		for _, vin := range tx.Vin {
 

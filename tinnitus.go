@@ -46,7 +46,8 @@ func (tinnitus *Tinnitus) Run() error {
 		if prevBlock != nil {
 			sleepDuration := time.Unix(block.Time, 0).Sub(time.Unix(prevBlock.Time, 0))
 			Logger.Debug("Sleeping ", sleepDuration)
-			time.Sleep(sleepDuration)
+			// time.Sleep(sleepDuration)
+			time.Sleep(Config.SleepDuration)
 		}
 
 		prevBlock = block
